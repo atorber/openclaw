@@ -73,7 +73,9 @@ export class GatewayWsClient {
     if (this.closed) return;
 
     this.opts.logger.info(`ws: connecting to ${this.opts.url}`);
-    this.ws = new WebSocket(this.opts.url);
+    this.ws = new WebSocket(this.opts.url, {
+      origin: `http://127.0.0.1:${new URL(this.opts.url).port}`,
+    });
 
     this.ws.on("open", () => {
       this.opts.logger.info("ws: connected, waiting for connect.challenge");
