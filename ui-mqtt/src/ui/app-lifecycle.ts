@@ -1,3 +1,4 @@
+import { clearQueueStaleTimer } from "./app-chat.ts";
 import { connectMqttGateway } from "./app-gateway.ts";
 import {
   startLogsPolling,
@@ -111,6 +112,9 @@ export function disconnectMqtt(host: LifecycleHost) {
     clearTimeout(connectTimer);
     connectTimer = null;
   }
+  // Clear the queue stale timer so it doesn't fire after disconnect
+  // and silently reconnect to the old gateway.
+  clearQueueStaleTimer();
   host.mqttClient?.stop();
   host.mqttClient = null;
   host.mqttConnecting = false;
@@ -135,6 +139,7 @@ export function handleFirstUpdated(host: LifecycleHost) {
 
 export function handleDisconnected(host: LifecycleHost) {
   host.connectGeneration += 1;
+  clearQueueStaleTimer();
   window.removeEventListener("popstate", host.popStateHandler);
   stopNodesPolling(host as unknown as Parameters<typeof stopNodesPolling>[0]);
   stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);

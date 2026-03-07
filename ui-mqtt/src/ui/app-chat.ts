@@ -178,6 +178,10 @@ function startQueueStaleTimer(host: ChatHost) {
     if (host.chatQueue.length === 0) {
       return;
     }
+    // Skip if already disconnected — user may be switching gateways
+    if (!host.connected) {
+      return;
+    }
     // Force clear busy state and reconnect — reconnect reloads history automatically
     host.chatSending = false;
     host.chatRunId = null;
