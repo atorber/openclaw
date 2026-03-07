@@ -7,6 +7,9 @@
     "mqtt": "^5.12.2",
     "ws": "^8.18.2"
   },
+  "peerDependencies": {
+    "openclaw": "*"
+  },
   "openclaw": {
     "extensions": [
       "./index.ts"
