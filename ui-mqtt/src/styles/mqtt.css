@@ -34,9 +34,19 @@
 }
 
 .mqtt-settings-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1.4rem;
   font-weight: 600;
   margin: 0 0 0.5rem;
+}
+
+.mqtt-settings-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .mqtt-settings-version {

@@ -5,6 +5,7 @@
  * Supports saving and selecting from historical gateway profiles.
  */
 
+import openclawIcon from "/openclaw-icon.png?url";
 import { html, type TemplateResult } from "lit";
 import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { i18n } from "../../i18n/index.ts";
@@ -186,7 +187,7 @@ export function renderMqttSettings(
     <div class="mqtt-settings">
       <div class="mqtt-settings-layout">
         <div class="mqtt-settings-card">
-          <h2 class="mqtt-settings-title">${t("mqtt.title")} <span class="mqtt-settings-version">v${__APP_VERSION__}</span></h2>
+          <h2 class="mqtt-settings-title"><img src="${openclawIcon}" alt="" class="mqtt-settings-icon" />${t("mqtt.title")} <span class="mqtt-settings-version">v${__APP_VERSION__}</span></h2>
           <p class="mqtt-settings-desc">${t("mqtt.description")}</p>
 
           ${error ? html`<div class="mqtt-settings-error">${error}</div>` : ""}
