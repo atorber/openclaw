@@ -4,8 +4,8 @@ import { MqttBridge } from "./src/bridge.js";
 import { parseConfig } from "./src/config.js";
 
 const plugin = {
-  id: "mqtt-bridge",
-  name: "MQTT Bridge",
+  id: "openclaw-mqtt-bridge",
+  name: "OpenClaw MQTT Bridge",
   description: "Bridge Gateway WS protocol to MQTT for remote UI access",
   configSchema: emptyPluginConfigSchema(),
   register(api: OpenClawPluginApi) {
@@ -18,7 +18,7 @@ const plugin = {
     }
 
     if (!config.enabled) {
-      api.logger.info("mqtt-bridge: disabled by config");
+      api.logger.info("openclaw-mqtt-bridge: disabled by config");
       return;
     }
 
@@ -28,9 +28,9 @@ const plugin = {
       try {
         bridge = new MqttBridge(config, api.logger);
         await bridge.start(event.port);
-        api.logger.info("mqtt-bridge: started");
+        api.logger.info("openclaw-mqtt-bridge: started");
       } catch (err) {
-        api.logger.error(`mqtt-bridge: failed to start: ${String(err)}`);
+        api.logger.error(`openclaw-mqtt-bridge: failed to start: ${String(err)}`);
         bridge = null;
       }
     });
@@ -39,7 +39,7 @@ const plugin = {
       try {
         await bridge?.stop();
       } catch (err) {
-        api.logger.warn(`mqtt-bridge: error during stop: ${String(err)}`);
+        api.logger.warn(`openclaw-mqtt-bridge: error during stop: ${String(err)}`);
       }
       bridge = null;
     });

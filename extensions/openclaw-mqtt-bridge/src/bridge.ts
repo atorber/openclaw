@@ -54,12 +54,10 @@ export class MqttBridge {
       instanceId,
       logger: this.logger,
       onHello: (hello) => {
-        this.logger.info(
-          `bridge: gateway connected (server=${hello.serverVersion ?? "unknown"})`,
-        );
-        // Publish hello to MQTT
-        this.publishEncrypted(`${this.prefix}/hello`, JSON.stringify(hello));
-        // Publish connected status
+        this.logger.info(`bridge: gateway connected (server=${hello.serverVersion ?? "unknown"})`);
+        // Publish hello to MQTT (retained so late subscribers get it immediately)
+        this.publishEncrypted(`${this.prefix}/hello`, JSON.stringify(hello), true);
+        // Publish connected status (retained)
         this.publishStatus("connected");
       },
       onResponse: (frame) => {
@@ -159,12 +157,16 @@ export class MqttBridge {
     const expectedReqTopic = `${this.prefix}/req`;
     if (topic !== expectedReqTopic) return;
 
+    this.logger.info(`bridge: received MQTT req (${payload.length} bytes)`);
+
     // Decrypt
     const plaintext = decrypt(payload, this.key);
     if (plaintext === null) {
       this.logger.warn("bridge: failed to decrypt MQTT req (wrong key or corrupted)");
       return;
     }
+
+    this.logger.info(`bridge: decrypted req: ${plaintext.slice(0, 200)}`);
 
     let req: MqttRequestPayload;
     try {
@@ -179,8 +181,11 @@ export class MqttBridge {
       return;
     }
 
+    this.logger.info(`bridge: forwarding req id=${req.id} method=${req.method}`);
+
     // Check if WS is connected
     if (!this.wsClient?.connected) {
+      this.logger.warn("bridge: WS not connected, replying UNAVAILABLE");
       this.publishEncrypted(
         `${this.prefix}/res`,
         JSON.stringify({
@@ -215,6 +220,7 @@ export class MqttBridge {
 
   /** Handle WS response — match pending and forward to MQTT. */
   private handleWsResponse(frame: GatewayResponseFrame): void {
+    this.logger.info(`bridge: WS res id=${frame.id} ok=${frame.ok}`);
     const pending = this.pendingRequests.get(frame.id);
     if (pending) {
       clearTimeout(pending.timer);
@@ -230,16 +236,16 @@ export class MqttBridge {
   }
 
   /** Publish an encrypted message to an MQTT topic. */
-  private publishEncrypted(topic: string, plaintext: string): void {
+  private publishEncrypted(topic: string, plaintext: string, retain = false): void {
     if (!this.mqttClient?.connected) return;
     const encrypted = encrypt(plaintext, this.key);
-    this.mqttClient.publish(topic, encrypted, { qos: 1 });
+    this.mqttClient.publish(topic, encrypted, { qos: 1, retain });
   }
 
-  /** Publish a status message. */
+  /** Publish a status message (always retained). */
   private publishStatus(status: "connected" | "disconnected", reason?: string): void {
     const payload: StatusPayload = { status, ts: Date.now(), reason };
-    this.publishEncrypted(`${this.prefix}/status`, JSON.stringify(payload));
+    this.publishEncrypted(`${this.prefix}/status`, JSON.stringify(payload), true);
   }
 
   /** Timeout all pending requests with a given reason. */

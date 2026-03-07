@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/mqtt-bridge",
+  "name": "@openclaw/openclaw-mqtt-bridge",
   "version": "2026.3.7",
   "description": "Bridge Gateway WS protocol to MQTT for remote UI access",
   "type": "module",
