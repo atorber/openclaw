@@ -4,7 +4,7 @@ import { MqttBridge } from "./src/bridge.js";
 import { parseConfig } from "./src/config.js";
 
 const plugin = {
-  id: "openclaw-mqtt-bridge",
+  id: "mqtt-bridge",
   name: "MQTT Bridge",
   description: "Bridge Gateway WS protocol to MQTT for remote UI access",
   configSchema: emptyPluginConfigSchema(),

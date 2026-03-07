@@ -1,5 +1,5 @@
 {
-  "id": "openclaw-mqtt-bridge",
+  "id": "mqtt-bridge",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
