@@ -336,9 +336,9 @@ export const en: TranslationMap = {
     },
   },
   mqtt: {
-    title: "MQTT Connection",
+    title: "Connect to Remote OpenClaw",
     description:
-      "Connect to your OpenClaw gateway via MQTT. Enter the broker URL and credentials, or generate a new gateway ID and key pair.",
+      "1. Install plugin: openclaw plugins install @atorber/openclaw-mqtt-bridge\n2. Generate keys: click Generate Gateway ID below (or enter an existing one)\n3. Apply config: copy the config from the right panel to OpenClaw and restart",
     brokerUrl: "Broker URL",
     gatewayId: "Gateway ID",
     secretKey: "Secret Key",

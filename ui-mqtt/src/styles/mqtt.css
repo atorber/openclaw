@@ -13,7 +13,7 @@
   display: flex;
   gap: 1.5rem;
   align-items: stretch;
-  max-width: 960px;
+  max-width: 1100px;
   width: 100%;
 }
 
@@ -26,9 +26,7 @@
 .mqtt-settings-card {
   flex: 1;
   min-width: 0;
-  max-width: 480px;
-  width: 100%;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 12px;
   background: var(--surface, var(--bg));
   border: 1px solid var(--border, #e0e0e0);
@@ -45,7 +43,8 @@
   font-size: 0.875rem;
   color: var(--fg-muted, #666);
   margin: 0 0 1.5rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  white-space: pre-line;
 }
 
 .mqtt-settings-error {
@@ -205,7 +204,7 @@
   flex-shrink: 0;
   margin-left: 0.5rem;
   color: var(--fg-muted, #999);
-  font-size: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .mqtt-dropdown-menu {
@@ -329,8 +328,8 @@
 
 /* Config preview panel */
 .mqtt-config-panel {
-  width: 480px;
-  flex-shrink: 0;
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   padding: 1.5rem;
@@ -361,7 +360,7 @@
 .mqtt-config-desc {
   font-size: 0.75rem;
   color: var(--fg-muted, #666);
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.5rem;
   line-height: 1.4;
 }
 
@@ -372,8 +371,8 @@
 }
 
 .mqtt-config-section + .mqtt-config-section {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid var(--border, #e5e7eb);
 }
 
@@ -383,11 +382,11 @@
 
 .mqtt-config-code {
   margin: 0;
-  padding: 0.875rem;
+  padding: 0.625rem 0.75rem;
   border-radius: 6px;
   background: var(--code-bg, #1e1e1e);
   color: var(--code-fg, #d4d4d4);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-family: "SF Mono", "Cascadia Code", "Fira Code", Menlo, Consolas, monospace;
   line-height: 1.5;
   overflow-x: auto;
@@ -402,4 +401,53 @@
 .mqtt-config-code--cli {
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+/* CLI command items with individual copy buttons */
+.mqtt-cli-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.mqtt-cli-item + .mqtt-cli-item {
+  margin-top: 0.5rem;
+}
+
+.mqtt-cli-item .mqtt-config-code {
+  flex: 1;
+  min-width: 0;
+}
+
+.mqtt-cli-item .mqtt-settings-copy-btn {
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+/* Icon-only copy button for config panel */
+.mqtt-copy-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 5px;
+  background: var(--surface, var(--bg));
+  color: var(--fg-muted, #888);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.mqtt-copy-icon-btn:hover {
+  color: var(--fg);
+  background: var(--hover-bg, #f3f4f6);
+  border-color: var(--fg-muted, #999);
+}
+
+.mqtt-copy-icon-btn.mqtt-copy-btn--copied {
+  color: #22c55e;
+  border-color: #22c55e;
 }

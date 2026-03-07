@@ -329,9 +329,9 @@ export const zh_CN: TranslationMap = {
     },
   },
   mqtt: {
-    title: "MQTT 连接",
+    title: "连接远程OpenClaw",
     description:
-      "通过 MQTT 连接到你的 OpenClaw 网关。输入 Broker URL 和凭据，或生成新的网关 ID 和密钥对。",
+      "1. 安装插件：openclaw plugins install @atorber/openclaw-mqtt-bridge\n2. 生成密钥：首次使用点击下方「生成网关 ID」，再次登录直接输入\n3. 同步配置：将右侧配置复制到 OpenClaw 配置文件并重启网关",
     brokerUrl: "Broker URL",
     gatewayId: "网关 ID",
     secretKey: "密钥",
@@ -342,7 +342,7 @@ export const zh_CN: TranslationMap = {
     hint: "将网关 ID 和密钥复制到你的桥接插件配置中。",
     bridgeConnected: "桥接已连接",
     bridgeDisconnected: "桥接未连接",
-    history: "历史网关",
+    history: "网关列表",
     historyPlaceholder: "-- 选择网关 --",
     clearHistory: "清除历史",
     deleteHistory: "从历史中移除",
