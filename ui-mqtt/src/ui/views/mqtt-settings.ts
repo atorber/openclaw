@@ -26,7 +26,9 @@ export function loadMqttSettings(): MqttSettings {
   };
   try {
     const raw = localStorage.getItem(MQTT_SETTINGS_KEY);
-    if (!raw) return defaults;
+    if (!raw) {
+      return defaults;
+    }
     const parsed = JSON.parse(raw) as Partial<MqttSettings>;
     return {
       brokerUrl:
@@ -85,9 +87,7 @@ export function renderMqttSettings(
         <h2 class="mqtt-settings-title">${t("mqtt.title")}</h2>
         <p class="mqtt-settings-desc">${t("mqtt.description")}</p>
 
-        ${error
-          ? html`<div class="mqtt-settings-error">${error}</div>`
-          : ""}
+        ${error ? html`<div class="mqtt-settings-error">${error}</div>` : ""}
 
         <div class="mqtt-settings-field">
           <label>${t("mqtt.brokerUrl")}</label>
@@ -127,9 +127,23 @@ export function renderMqttSettings(
               type="password"
               .value=${settings.secretKey}
               placeholder="Base64 encoded 256-bit key"
+              autocomplete="off"
               @input=${(e: InputEvent) =>
                 callbacks.onFieldChange("secretKey", (e.target as HTMLInputElement).value)}
             />
+            <button
+              class="mqtt-settings-copy-btn"
+              title="Show/Hide"
+              @click=${(e: MouseEvent) => {
+                const btn = e.currentTarget as HTMLButtonElement;
+                const input = btn.parentElement?.querySelector("input") as HTMLInputElement;
+                if (input) {
+                  const isPassword = input.type === "password";
+                  input.type = isPassword ? "text" : "password";
+                  btn.textContent = isPassword ? "🙈" : "👁";
+                }
+              }}
+            >👁</button>
             <button
               class="mqtt-settings-copy-btn"
               title="${t("mqtt.copy")}"

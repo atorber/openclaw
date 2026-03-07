@@ -95,11 +95,13 @@ export class MqttGatewayClient {
     this.helloReceived = false;
 
     // Import the encryption key
+    console.log("[mqtt] importing secret key...");
     this.cryptoKey = await importKey(this.opts.secretKey);
+    console.log("[mqtt] secret key imported OK");
 
     // Connect to MQTT broker
     const clientId = `openclaw-ui-${randomSuffix()}`;
-    debugLog("connecting", { brokerUrl: this.opts.brokerUrl, clientId });
+    console.log(`[mqtt] connecting to ${this.opts.brokerUrl} (clientId=${clientId})`);
     this.client = mqtt.connect(this.opts.brokerUrl, {
       clientId,
       clean: true,
@@ -108,7 +110,7 @@ export class MqttGatewayClient {
     });
 
     this.client.on("connect", () => {
-      debugLog("connected");
+      console.log("[mqtt] connected to broker");
       this._connected = true;
       this.opts.onConnectionChange?.(true);
       // Subscribe to all response/event/hello/status topics
@@ -121,29 +123,35 @@ export class MqttGatewayClient {
       for (const topic of topics) {
         this.client!.subscribe(topic, { qos: 1 });
       }
-      debugLog("subscribed", topics);
+      console.log("[mqtt] subscribed to topics:", topics);
     });
 
     this.client.on("message", (topic: string, payload: Buffer) => {
-      void this.handleMessage(topic, payload);
+      console.log(`[mqtt] message on ${topic} (${payload.length} bytes)`);
+      // MQTT.js may return a Uint8Array backed by a larger ArrayBuffer.
+      // Slice to get an exact-length ArrayBuffer for Web Crypto.
+      const exactBuffer = payload.buffer.slice(
+        payload.byteOffset,
+        payload.byteOffset + payload.byteLength,
+      );
+      void this.handleMessage(topic, exactBuffer);
     });
 
     this.client.on("close", () => {
-      debugLog("close");
+      console.log("[mqtt] connection closed");
       this._connected = false;
       this.opts.onConnectionChange?.(false);
       this.opts.onClose?.({ reason: "mqtt connection closed" });
     });
 
     this.client.on("offline", () => {
-      debugLog("offline");
+      console.log("[mqtt] broker offline");
       this._connected = false;
       this.opts.onConnectionChange?.(false);
     });
 
     this.client.on("error", (err: Error) => {
-      debugLog("error", err.message);
-      console.error("[mqtt-gateway] error:", err.message);
+      console.error("[mqtt] error:", err.message);
     });
   }
 
@@ -189,15 +197,15 @@ export class MqttGatewayClient {
     });
   }
 
-  private async handleMessage(topic: string, rawPayload: Buffer): Promise<void> {
+  private async handleMessage(topic: string, rawPayload: ArrayBuffer): Promise<void> {
     if (!this.cryptoKey) {
       return;
     }
 
     // Decrypt the payload
-    const plaintext = await decrypt(rawPayload.buffer, this.cryptoKey);
+    const plaintext = await decrypt(rawPayload, this.cryptoKey);
     if (plaintext === null) {
-      // Decryption failed — wrong key or corrupted. Silently discard.
+      console.warn(`[mqtt] decrypt failed for ${topic} (${rawPayload.byteLength} bytes)`);
       return;
     }
 
@@ -205,11 +213,12 @@ export class MqttGatewayClient {
     try {
       parsed = JSON.parse(plaintext);
     } catch {
+      console.warn(`[mqtt] invalid JSON after decrypt for ${topic}`);
       return;
     }
 
     if (topic === `${this.prefix}/hello`) {
-      debugLog("received hello", (parsed as MqttHelloPayload)?.serverVersion);
+      console.log("[mqtt] received hello:", JSON.stringify(parsed).slice(0, 200));
       this.helloReceived = true;
       this.opts.onHello?.(parsed as MqttHelloPayload);
       return;
@@ -270,7 +279,7 @@ export class MqttGatewayClient {
     }
     const encrypted = await encrypt(plaintext, this.cryptoKey);
     debugLog("publish", { topic, plainLen: plaintext.length, encryptedLen: encrypted.byteLength });
-    this.client.publish(topic, Buffer.from(encrypted), { qos: 1 });
+    this.client.publish(topic, new Uint8Array(encrypted), { qos: 1 });
   }
 
   private flushPending(err: Error): void {

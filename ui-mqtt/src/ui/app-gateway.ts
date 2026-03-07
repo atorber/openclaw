@@ -12,6 +12,7 @@ import {
 } from "./app-settings.ts";
 import { handleAgentEvent, resetToolStream, type AgentEventPayload } from "./app-tool-stream.ts";
 import type { OpenClawApp } from "./app.ts";
+import { normalizeAssistantIdentity } from "./assistant-identity.ts";
 import { shouldReloadHistoryForFinalEvent } from "./chat-event-reload.ts";
 import { loadAgents, loadToolsCatalog } from "./controllers/agents.ts";
 import { loadAssistantIdentity } from "./controllers/assistant-identity.ts";
@@ -39,9 +40,7 @@ import {
   type MqttHelloPayload,
 } from "./mqtt-gateway-client.ts";
 import type { Tab } from "./navigation.ts";
-import { normalizeAssistantIdentity } from "./assistant-identity.ts";
 import type { UiSettings } from "./storage.ts";
-import type { MqttSettings } from "./views/mqtt-settings.ts";
 import type {
   AgentsListResult,
   PresenceEntry,
@@ -49,6 +48,7 @@ import type {
   StatusSummary,
   UpdateAvailable,
 } from "./types.ts";
+import type { MqttSettings } from "./views/mqtt-settings.ts";
 
 type GatewayHost = {
   settings: UiSettings;
@@ -56,6 +56,9 @@ type GatewayHost = {
   clientInstanceId: string;
   client: GatewayBrowserClient | null;
   mqttClient: MqttGatewayClient | null;
+  mqttConnecting: boolean;
+  mqttConnected: boolean;
+  mqttError: string | null;
   connected: boolean;
   hello: GatewayHelloOk | null;
   lastError: string | null;
@@ -394,6 +397,11 @@ export function applySnapshot(host: GatewayHost, hello: GatewayHelloOk) {
  * ui-mqtt never contacts Gateway HTTP; all data comes through MQTT topics.
  */
 export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings) {
+  console.log("[mqtt-bridge] connectMqttGateway called", {
+    brokerUrl: mqttSettings.brokerUrl,
+    gatewayId: mqttSettings.gatewayId,
+    hasSecretKey: !!mqttSettings.secretKey,
+  });
   host.lastError = null;
   host.lastErrorCode = null;
   host.hello = null;
@@ -411,7 +419,14 @@ export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings
     gatewayId: mqttSettings.gatewayId,
     secretKey: mqttSettings.secretKey,
     onHello: (helloPayload: MqttHelloPayload) => {
-      if (host.mqttClient !== mqttClient) return;
+      console.log(
+        "[mqtt-bridge] onHello received:",
+        helloPayload.serverVersion,
+        helloPayload.assistantName,
+      );
+      if (host.mqttClient !== mqttClient) {
+        return;
+      }
 
       // Synthesize a GatewayHelloOk-like object from the MQTT hello payload
       const identity = normalizeAssistantIdentity({
@@ -432,6 +447,9 @@ export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings
         snapshot: helloPayload.snapshot,
       };
       host.connected = true;
+      host.mqttConnecting = false;
+      host.mqttConnected = true;
+      host.mqttError = null;
       host.lastError = null;
       host.lastErrorCode = null;
       host.hello = hello;
@@ -450,20 +468,29 @@ export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings
       void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
     },
     onEvent: (evt: MqttGatewayEventFrame) => {
-      if (host.mqttClient !== mqttClient) return;
+      if (host.mqttClient !== mqttClient) {
+        return;
+      }
       // Adapt MqttGatewayEventFrame → GatewayEventFrame (same shape)
       handleGatewayEvent(host, evt as unknown as GatewayEventFrame);
     },
     onClose: ({ reason }) => {
-      if (host.mqttClient !== mqttClient) return;
+      if (host.mqttClient !== mqttClient) {
+        return;
+      }
       host.connected = false;
+      host.mqttConnecting = false;
+      host.mqttConnected = false;
       host.lastError = `mqtt: ${reason}`;
       host.lastErrorCode = null;
     },
     onStatusChange: (status) => {
-      if (host.mqttClient !== mqttClient) return;
+      if (host.mqttClient !== mqttClient) {
+        return;
+      }
       if (status.status === "disconnected") {
         host.connected = false;
+        host.mqttConnected = false;
         host.lastError = status.reason ?? "bridge disconnected";
         host.lastErrorCode = null;
       }
@@ -488,6 +515,9 @@ export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings
   } as unknown as GatewayBrowserClient;
 
   void mqttClient.start().catch((err: unknown) => {
+    console.error("[mqtt-bridge] start failed:", err);
+    host.mqttConnecting = false;
+    host.mqttError = String(err);
     host.lastError = `mqtt connection failed: ${String(err)}`;
   });
 }

@@ -16,10 +16,10 @@ import {
   syncTabWithLocation,
   syncThemeWithSettings,
 } from "./app-settings.ts";
+import type { MqttGatewayClient } from "./mqtt-gateway-client.ts";
 import type { Tab } from "./navigation.ts";
 import type { MqttSettings } from "./views/mqtt-settings.ts";
 import { loadMqttSettings } from "./views/mqtt-settings.ts";
-import type { MqttGatewayClient } from "./mqtt-gateway-client.ts";
 
 type LifecycleHost = {
   basePath: string;
@@ -50,7 +50,7 @@ type LifecycleHost = {
 };
 
 export function handleConnected(host: LifecycleHost) {
-  const connectGeneration = ++host.connectGeneration;
+  ++host.connectGeneration;
   host.basePath = inferBasePath();
 
   // Load saved MQTT settings
@@ -62,10 +62,8 @@ export function handleConnected(host: LifecycleHost) {
   attachThemeListener(host as unknown as Parameters<typeof attachThemeListener>[0]);
   window.addEventListener("popstate", host.popStateHandler);
 
-  // MQTT mode: if we have saved credentials, auto-connect
-  if (host.mqttSettings.gatewayId && host.mqttSettings.secretKey) {
-    startMqttConnection(host, host.mqttSettings);
-  }
+  // MQTT mode: load saved settings but do NOT auto-connect.
+  // User must click Connect manually.
 
   startNodesPolling(host as unknown as Parameters<typeof startNodesPolling>[0]);
   if (host.tab === "logs") {
@@ -79,13 +77,8 @@ export function handleConnected(host: LifecycleHost) {
 export function startMqttConnection(host: LifecycleHost, mqttSettings: MqttSettings) {
   host.mqttConnecting = true;
   host.mqttError = null;
-  connectMqttGateway(
-    host as unknown as Parameters<typeof connectMqttGateway>[0],
-    mqttSettings,
-  );
-  // The actual connected state will be set by the onHello callback in connectMqttGateway
-  host.mqttConnecting = false;
-  host.mqttConnected = true;
+  connectMqttGateway(host as unknown as Parameters<typeof connectMqttGateway>[0], mqttSettings);
+  // mqttConnecting/mqttConnected will be updated by onHello/onClose callbacks in connectMqttGateway
 }
 
 export function handleFirstUpdated(host: LifecycleHost) {
