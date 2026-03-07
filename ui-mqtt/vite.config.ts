@@ -32,7 +32,7 @@ export default defineConfig(() => {
       "process.env": "{}",
     },
     build: {
-      outDir: path.resolve(here, "../dist/control-ui"),
+      outDir: path.resolve(here, "dist/control-ui"),
       emptyOutDir: true,
       sourcemap: true,
       // Keep CI/onboard logs clean; current control UI chunking is intentionally above 500 kB.
