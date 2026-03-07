@@ -142,8 +142,16 @@ export function renderMqttSettings(
   const canConnect = settings.gatewayId.trim() && settings.secretKey.trim();
   const history = loadHistory();
 
+  const gwId = settings.gatewayId || "<your-gateway-id>";
+  const sk = settings.secretKey || "<your-secret-key>";
+
   const configJson = JSON.stringify(
     {
+      gateway: {
+        controlUi: {
+          allowInsecureAuth: true,
+        },
+      },
       plugins: {
         entries: {
           "openclaw-mqtt-bridge": {
@@ -151,8 +159,8 @@ export function renderMqttSettings(
             config: {
               enabled: true,
               mqtt: {
-                gatewayId: settings.gatewayId || "<your-gateway-id>",
-                secretKey: settings.secretKey || "<your-secret-key>",
+                gatewayId: gwId,
+                secretKey: sk,
               },
             },
           },
@@ -162,6 +170,10 @@ export function renderMqttSettings(
     null,
     2,
   );
+
+  const cliCommands =
+    `openclaw config set "gateway.controlUi.allowInsecureAuth" true\n` +
+    `openclaw config set "plugins.entries.openclaw-mqtt-bridge" '{"enabled":true,"config":{"enabled":true,"mqtt":{"gatewayId":"${gwId}","secretKey":"${sk}"}}}'`;
 
   return html`
     <div class="mqtt-settings">
@@ -336,16 +348,30 @@ export function renderMqttSettings(
         </div>
 
         <div class="mqtt-config-panel">
-          <div class="mqtt-config-header">
-            <label>${t("mqtt.configTitle")}</label>
-            <button
-              class="mqtt-settings-copy-btn"
-              @click=${(e: MouseEvent) =>
-                copyToClipboard(configJson, e.currentTarget as HTMLButtonElement)}
-            >${t("mqtt.copy")}</button>
+          <div class="mqtt-config-section">
+            <div class="mqtt-config-header">
+              <label>${t("mqtt.configCliTitle")}</label>
+              <button
+                class="mqtt-settings-copy-btn"
+                @click=${(e: MouseEvent) =>
+                  copyToClipboard(cliCommands, e.currentTarget as HTMLButtonElement)}
+              >${t("mqtt.copy")}</button>
+            </div>
+            <pre class="mqtt-config-code mqtt-config-code--cli"><code>${cliCommands}</code></pre>
           </div>
-          <p class="mqtt-config-desc">${t("mqtt.configDesc")}</p>
-          <pre class="mqtt-config-code"><code>${configJson}</code></pre>
+
+          <div class="mqtt-config-section">
+            <div class="mqtt-config-header">
+              <label>${t("mqtt.configJsonTitle")}</label>
+              <button
+                class="mqtt-settings-copy-btn"
+                @click=${(e: MouseEvent) =>
+                  copyToClipboard(configJson, e.currentTarget as HTMLButtonElement)}
+              >${t("mqtt.copy")}</button>
+            </div>
+            <p class="mqtt-config-desc">${t("mqtt.configDesc")}</p>
+            <pre class="mqtt-config-code"><code>${configJson}</code></pre>
+          </div>
         </div>
       </div>
     </div>

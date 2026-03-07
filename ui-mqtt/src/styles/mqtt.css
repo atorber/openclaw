@@ -329,7 +329,7 @@
 
 /* Config preview panel */
 .mqtt-config-panel {
-  width: 380px;
+  width: 480px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -365,8 +365,23 @@
   line-height: 1.4;
 }
 
-.mqtt-config-code {
+/* Config panel sections */
+.mqtt-config-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.mqtt-config-section + .mqtt-config-section {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border, #e5e7eb);
+}
+
+.mqtt-config-section:last-child {
   flex: 1;
+}
+
+.mqtt-config-code {
   margin: 0;
   padding: 0.875rem;
   border-radius: 6px;
@@ -378,4 +393,13 @@
   overflow-x: auto;
   white-space: pre;
   border: 1px solid var(--border, #333);
+}
+
+.mqtt-config-section:last-child .mqtt-config-code {
+  flex: 1;
+}
+
+.mqtt-config-code--cli {
+  white-space: pre-wrap;
+  word-break: break-all;
 }

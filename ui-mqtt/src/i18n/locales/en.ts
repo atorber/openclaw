@@ -355,7 +355,8 @@ export const en: TranslationMap = {
     deleteHistory: "Remove from history",
     disconnect: "Disconnect",
     cancel: "Cancel",
-    configTitle: "Plugin Configuration",
+    configCliTitle: "CLI Commands",
+    configJsonTitle: "JSON Configuration",
     configDesc: "Add to plugins.entries in ~/.openclaw/openclaw.json",
   },
 };

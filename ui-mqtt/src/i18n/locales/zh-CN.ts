@@ -348,7 +348,8 @@ export const zh_CN: TranslationMap = {
     deleteHistory: "从历史中移除",
     disconnect: "断开连接",
     cancel: "取消",
-    configTitle: "插件配置",
+    configCliTitle: "CLI 命令",
+    configJsonTitle: "JSON 配置",
     configDesc: "添加到 ~/.openclaw/openclaw.json 的 plugins.entries 中",
   },
 };
