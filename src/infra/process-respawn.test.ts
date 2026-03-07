@@ -181,6 +181,21 @@ describe("restartGatewayProcessWithFreshPid", () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+  it("ignores node task script hints for gateway restart detection on Windows", () => {
+    clearSupervisorHints();
+    setPlatform("win32");
+    process.env.OPENCLAW_TASK_SCRIPT = "C:\\openclaw\\node.cmd";
+    process.env.OPENCLAW_TASK_SCRIPT_NAME = "node.cmd";
+    process.env.OPENCLAW_SERVICE_MARKER = "openclaw";
+    process.env.OPENCLAW_SERVICE_KIND = "node";
+
+    const result = restartGatewayProcessWithFreshPid();
+
+    expect(result.mode).toBe("disabled");
+    expect(triggerOpenClawRestartMock).not.toHaveBeenCalled();
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
   it("returns failed when spawn throws", () => {
     delete process.env.OPENCLAW_NO_RESPAWN;
     clearSupervisorHints();

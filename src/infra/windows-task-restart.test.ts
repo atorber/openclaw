@@ -29,8 +29,10 @@ afterEach(() => {
 describe("relaunchGatewayScheduledTask", () => {
   it("writes a detached schtasks relaunch helper", () => {
     const unref = vi.fn();
+    let seenScriptPath = "";
     spawnMock.mockImplementation((_file: string, args: string[]) => {
       createdScriptPaths.add(args[2]);
+      seenScriptPath = args[2];
       return { unref };
     });
 
@@ -41,6 +43,7 @@ describe("relaunchGatewayScheduledTask", () => {
       method: "schtasks",
       tried: expect.arrayContaining(['schtasks /Run /TN "OpenClaw Gateway (work)"']),
     });
+    expect(result.tried).toContain(`cmd.exe /d /c "${seenScriptPath}"`);
     expect(spawnMock).toHaveBeenCalledWith(
       "cmd.exe",
       ["/d", "/c", expect.any(String)],
