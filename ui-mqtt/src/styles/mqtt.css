@@ -1,0 +1,152 @@
+/* MQTT connection settings view */
+.mqtt-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.mqtt-settings-card {
+  max-width: 480px;
+  width: 100%;
+  padding: 2rem;
+  border-radius: 12px;
+  background: var(--surface, var(--bg));
+  border: 1px solid var(--border, #e0e0e0);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mqtt-settings-title {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.mqtt-settings-desc {
+  font-size: 0.875rem;
+  color: var(--fg-muted, #666);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.mqtt-settings-error {
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  border-radius: 6px;
+  background: var(--error-bg, #fef2f2);
+  color: var(--error-fg, #dc2626);
+  font-size: 0.875rem;
+  border: 1px solid var(--error-border, #fecaca);
+}
+
+.mqtt-settings-field {
+  margin-bottom: 1rem;
+}
+
+.mqtt-settings-field label {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  margin-bottom: 0.375rem;
+  color: var(--fg-muted, #666);
+}
+
+.mqtt-settings-field input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  background: var(--input-bg, var(--bg));
+  color: var(--fg);
+  font-size: 0.875rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.mqtt-settings-field input:focus {
+  outline: none;
+  border-color: var(--accent, #3b82f6);
+  box-shadow: 0 0 0 2px var(--accent-ring, rgba(59, 130, 246, 0.2));
+}
+
+.mqtt-settings-input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.mqtt-settings-input-row input {
+  flex: 1;
+}
+
+.mqtt-settings-copy-btn {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  background: var(--surface, var(--bg));
+  color: var(--fg-muted, #666);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mqtt-settings-copy-btn:hover:not(:disabled) {
+  background: var(--hover-bg, #f3f4f6);
+}
+
+.mqtt-settings-copy-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.mqtt-settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.mqtt-settings-generate-btn {
+  padding: 0.625rem 1rem;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 6px;
+  background: var(--surface, var(--bg));
+  color: var(--fg);
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mqtt-settings-generate-btn:hover {
+  background: var(--hover-bg, #f3f4f6);
+}
+
+.mqtt-settings-connect-btn {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent, #3b82f6);
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.mqtt-settings-connect-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.mqtt-settings-connect-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.mqtt-settings-hint {
+  font-size: 0.75rem;
+  color: var(--fg-muted, #999);
+  margin: 1rem 0 0;
+  line-height: 1.5;
+}

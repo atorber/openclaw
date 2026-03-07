@@ -33,8 +33,15 @@ import {
   type GatewayHelloOk,
 } from "./gateway.ts";
 import { GatewayBrowserClient } from "./gateway.ts";
+import {
+  MqttGatewayClient,
+  type MqttGatewayEventFrame,
+  type MqttHelloPayload,
+} from "./mqtt-gateway-client.ts";
 import type { Tab } from "./navigation.ts";
+import { normalizeAssistantIdentity } from "./assistant-identity.ts";
 import type { UiSettings } from "./storage.ts";
+import type { MqttSettings } from "./views/mqtt-settings.ts";
 import type {
   AgentsListResult,
   PresenceEntry,
@@ -48,6 +55,7 @@ type GatewayHost = {
   password: string;
   clientInstanceId: string;
   client: GatewayBrowserClient | null;
+  mqttClient: MqttGatewayClient | null;
   connected: boolean;
   hello: GatewayHelloOk | null;
   lastError: string | null;
@@ -379,4 +387,107 @@ export function applySnapshot(host: GatewayHost, hello: GatewayHelloOk) {
     applySessionDefaults(host, snapshot.sessionDefaults);
   }
   host.updateAvailable = snapshot?.updateAvailable ?? null;
+}
+
+/**
+ * Connect to Gateway via MQTT bridge — replaces connectGateway for MQTT mode.
+ * ui-mqtt never contacts Gateway HTTP; all data comes through MQTT topics.
+ */
+export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings) {
+  host.lastError = null;
+  host.lastErrorCode = null;
+  host.hello = null;
+  host.connected = false;
+  host.execApprovalQueue = [];
+  host.execApprovalError = null;
+
+  // Stop any existing clients
+  host.client?.stop();
+  host.client = null;
+  host.mqttClient?.stop();
+
+  const mqttClient = new MqttGatewayClient({
+    brokerUrl: mqttSettings.brokerUrl,
+    gatewayId: mqttSettings.gatewayId,
+    secretKey: mqttSettings.secretKey,
+    onHello: (helloPayload: MqttHelloPayload) => {
+      if (host.mqttClient !== mqttClient) return;
+
+      // Synthesize a GatewayHelloOk-like object from the MQTT hello payload
+      const identity = normalizeAssistantIdentity({
+        agentId: helloPayload.assistantAgentId ?? null,
+        name: helloPayload.assistantName,
+        avatar: helloPayload.assistantAvatar ?? null,
+      });
+      host.assistantName = identity.name;
+      host.assistantAvatar = identity.avatar;
+      host.assistantAgentId = identity.agentId ?? null;
+      host.serverVersion = helloPayload.serverVersion ?? null;
+
+      // Build a hello-ok-like structure for snapshot application
+      const hello: GatewayHelloOk = {
+        type: "hello-ok",
+        protocol: 3,
+        server: { version: helloPayload.serverVersion },
+        snapshot: helloPayload.snapshot,
+      };
+      host.connected = true;
+      host.lastError = null;
+      host.lastErrorCode = null;
+      host.hello = hello;
+      applySnapshot(host, hello);
+
+      // Reset orphaned chat state
+      host.chatRunId = null;
+      (host as unknown as { chatStream: string | null }).chatStream = null;
+      (host as unknown as { chatStreamStartedAt: number | null }).chatStreamStartedAt = null;
+      resetToolStream(host as unknown as Parameters<typeof resetToolStream>[0]);
+      void loadAssistantIdentity(host as unknown as OpenClawApp);
+      void loadAgents(host as unknown as OpenClawApp);
+      void loadToolsCatalog(host as unknown as OpenClawApp);
+      void loadNodes(host as unknown as OpenClawApp, { quiet: true });
+      void loadDevices(host as unknown as OpenClawApp, { quiet: true });
+      void refreshActiveTab(host as unknown as Parameters<typeof refreshActiveTab>[0]);
+    },
+    onEvent: (evt: MqttGatewayEventFrame) => {
+      if (host.mqttClient !== mqttClient) return;
+      // Adapt MqttGatewayEventFrame → GatewayEventFrame (same shape)
+      handleGatewayEvent(host, evt as unknown as GatewayEventFrame);
+    },
+    onClose: ({ reason }) => {
+      if (host.mqttClient !== mqttClient) return;
+      host.connected = false;
+      host.lastError = `mqtt: ${reason}`;
+      host.lastErrorCode = null;
+    },
+    onStatusChange: (status) => {
+      if (host.mqttClient !== mqttClient) return;
+      if (status.status === "disconnected") {
+        host.connected = false;
+        host.lastError = status.reason ?? "bridge disconnected";
+        host.lastErrorCode = null;
+      }
+    },
+  });
+
+  host.mqttClient = mqttClient;
+
+  // Create a thin adapter so existing controllers that use host.client.request() work unchanged.
+  // This avoids modifying dozens of controllers — they all call state.client.request(method, params).
+  host.client = {
+    request: (method: string, params?: unknown) => mqttClient.request(method, params),
+    get connected() {
+      return mqttClient.connected;
+    },
+    start() {
+      // no-op: MQTT client lifecycle managed separately
+    },
+    stop() {
+      mqttClient.stop();
+    },
+  } as unknown as GatewayBrowserClient;
+
+  void mqttClient.start().catch((err: unknown) => {
+    host.lastError = `mqtt connection failed: ${String(err)}`;
+  });
 }

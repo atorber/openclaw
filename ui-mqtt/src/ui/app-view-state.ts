@@ -6,10 +6,12 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
+import type { MqttGatewayClient } from "./mqtt-gateway-client.ts";
 import type { Tab } from "./navigation.ts";
 import type { UiSettings } from "./storage.ts";
 import type { ThemeTransitionContext } from "./theme-transition.ts";
 import type { ThemeMode } from "./theme.ts";
+import type { MqttSettings } from "./views/mqtt-settings.ts";
 import type {
   AgentsListResult,
   AgentsFilesListResult,
@@ -256,6 +258,11 @@ export type AppViewState = {
     logsAtBottom: boolean;
     updateAvailable: import("./types.js").UpdateAvailable | null;
     client: GatewayBrowserClient | null;
+    mqttClient: MqttGatewayClient | null;
+    mqttSettings: MqttSettings;
+    mqttConnecting: boolean;
+    mqttConnected: boolean;
+    mqttError: string | null;
     refreshSessionsAfterChat: Set<string>;
     connect: () => void;
     setTab: (tab: Tab) => void;

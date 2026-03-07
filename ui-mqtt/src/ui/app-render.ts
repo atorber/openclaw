@@ -75,6 +75,13 @@ import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
+import {
+  renderMqttSettings,
+  generateCredentials,
+  saveMqttSettings,
+  type MqttSettings,
+} from "./views/mqtt-settings.ts";
+import { startMqttConnection } from "./app-lifecycle.ts";
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
@@ -139,6 +146,36 @@ function resolveAssistantAvatarUrl(state: AppViewState): string | undefined {
 }
 
 export function renderApp(state: AppViewState) {
+  // MQTT mode: show settings page if not connected yet and no saved credentials
+  if (!state.mqttConnected && !state.connected) {
+    return renderMqttSettings(
+      state.mqttSettings,
+      {
+        onConnect: (settings: MqttSettings) => {
+          saveMqttSettings(settings);
+          state.mqttSettings = settings;
+          startMqttConnection(
+            state as unknown as Parameters<typeof startMqttConnection>[0],
+            settings,
+          );
+        },
+        onFieldChange: (field: keyof MqttSettings, value: string) => {
+          state.mqttSettings = { ...state.mqttSettings, [field]: value };
+        },
+        onGenerate: () => {
+          const creds = generateCredentials();
+          state.mqttSettings = {
+            ...state.mqttSettings,
+            gatewayId: creds.gatewayId,
+            secretKey: creds.secretKey,
+          };
+        },
+      },
+      state.mqttError,
+      state.mqttConnecting,
+    );
+  }
+
   const openClawVersion =
     (typeof state.hello?.server?.version === "string" && state.hello.server.version.trim()) ||
     state.updateAvailable?.currentVersion ||

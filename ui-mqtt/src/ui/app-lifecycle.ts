@@ -1,4 +1,4 @@
-import { connectGateway } from "./app-gateway.ts";
+import { connectMqttGateway } from "./app-gateway.ts";
 import {
   startLogsPolling,
   startNodesPolling,
@@ -16,12 +16,19 @@ import {
   syncTabWithLocation,
   syncThemeWithSettings,
 } from "./app-settings.ts";
-import { loadControlUiBootstrapConfig } from "./controllers/control-ui-bootstrap.ts";
 import type { Tab } from "./navigation.ts";
+import type { MqttSettings } from "./views/mqtt-settings.ts";
+import { loadMqttSettings } from "./views/mqtt-settings.ts";
+import type { MqttGatewayClient } from "./mqtt-gateway-client.ts";
 
 type LifecycleHost = {
   basePath: string;
   client?: { stop: () => void } | null;
+  mqttClient?: MqttGatewayClient | null;
+  mqttSettings: MqttSettings;
+  mqttConnecting: boolean;
+  mqttConnected: boolean;
+  mqttError: string | null;
   connectGeneration: number;
   connected?: boolean;
   tab: Tab;
@@ -45,18 +52,21 @@ type LifecycleHost = {
 export function handleConnected(host: LifecycleHost) {
   const connectGeneration = ++host.connectGeneration;
   host.basePath = inferBasePath();
-  const bootstrapReady = loadControlUiBootstrapConfig(host);
+
+  // Load saved MQTT settings
+  host.mqttSettings = loadMqttSettings();
+
   applySettingsFromUrl(host as unknown as Parameters<typeof applySettingsFromUrl>[0]);
   syncTabWithLocation(host as unknown as Parameters<typeof syncTabWithLocation>[0], true);
   syncThemeWithSettings(host as unknown as Parameters<typeof syncThemeWithSettings>[0]);
   attachThemeListener(host as unknown as Parameters<typeof attachThemeListener>[0]);
   window.addEventListener("popstate", host.popStateHandler);
-  void bootstrapReady.finally(() => {
-    if (host.connectGeneration !== connectGeneration) {
-      return;
-    }
-    connectGateway(host as unknown as Parameters<typeof connectGateway>[0]);
-  });
+
+  // MQTT mode: if we have saved credentials, auto-connect
+  if (host.mqttSettings.gatewayId && host.mqttSettings.secretKey) {
+    startMqttConnection(host, host.mqttSettings);
+  }
+
   startNodesPolling(host as unknown as Parameters<typeof startNodesPolling>[0]);
   if (host.tab === "logs") {
     startLogsPolling(host as unknown as Parameters<typeof startLogsPolling>[0]);
@@ -64,6 +74,18 @@ export function handleConnected(host: LifecycleHost) {
   if (host.tab === "debug") {
     startDebugPolling(host as unknown as Parameters<typeof startDebugPolling>[0]);
   }
+}
+
+export function startMqttConnection(host: LifecycleHost, mqttSettings: MqttSettings) {
+  host.mqttConnecting = true;
+  host.mqttError = null;
+  connectMqttGateway(
+    host as unknown as Parameters<typeof connectMqttGateway>[0],
+    mqttSettings,
+  );
+  // The actual connected state will be set by the onHello callback in connectMqttGateway
+  host.mqttConnecting = false;
+  host.mqttConnected = true;
 }
 
 export function handleFirstUpdated(host: LifecycleHost) {
@@ -78,6 +100,9 @@ export function handleDisconnected(host: LifecycleHost) {
   stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
   host.client?.stop();
   host.client = null;
+  host.mqttClient?.stop();
+  host.mqttClient = null;
+  host.mqttConnected = false;
   host.connected = false;
   detachThemeListener(host as unknown as Parameters<typeof detachThemeListener>[0]);
   host.topbarObserver?.disconnect();

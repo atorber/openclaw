@@ -25,7 +25,11 @@ export default defineConfig(() => {
     base,
     publicDir: path.resolve(here, "public"),
     optimizeDeps: {
-      include: ["lit/directives/repeat.js"],
+      include: ["lit/directives/repeat.js", "mqtt"],
+    },
+    define: {
+      // MQTT.js references process.env in browser builds; provide safe fallbacks.
+      "process.env": "{}",
     },
     build: {
       outDir: path.resolve(here, "../dist/control-ui"),

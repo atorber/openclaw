@@ -328,4 +328,18 @@ export const zh_CN: TranslationMap = {
       nameRequiredShort: "名称为必填。",
     },
   },
+  mqtt: {
+    title: "MQTT 连接",
+    description: "通过 MQTT 连接到你的 OpenClaw 网关。输入 Broker URL 和凭据，或生成新的网关 ID 和密钥对。",
+    brokerUrl: "Broker URL",
+    gatewayId: "网关 ID",
+    secretKey: "密钥",
+    copy: "复制",
+    generate: "生成网关 ID",
+    connect: "连接",
+    connecting: "连接中...",
+    hint: "将网关 ID 和密钥复制到你的桥接插件配置中。",
+    bridgeConnected: "桥接已连接",
+    bridgeDisconnected: "桥接未连接",
+  },
 };

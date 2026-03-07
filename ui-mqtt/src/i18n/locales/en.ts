@@ -335,4 +335,19 @@ export const en: TranslationMap = {
       nameRequiredShort: "Name required.",
     },
   },
+  mqtt: {
+    title: "MQTT Connection",
+    description:
+      "Connect to your OpenClaw gateway via MQTT. Enter the broker URL and credentials, or generate a new gateway ID and key pair.",
+    brokerUrl: "Broker URL",
+    gatewayId: "Gateway ID",
+    secretKey: "Secret Key",
+    copy: "Copy",
+    generate: "Generate Gateway ID",
+    connect: "Connect",
+    connecting: "Connecting...",
+    hint: "Copy the Gateway ID and Secret Key to your bridge plugin configuration.",
+    bridgeConnected: "Bridge connected",
+    bridgeDisconnected: "Bridge disconnected",
+  },
 };

@@ -59,8 +59,15 @@ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
 import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
 import type { SkillMessage } from "./controllers/skills.ts";
 import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
+import type { MqttGatewayClient } from "./mqtt-gateway-client.ts";
 import type { Tab } from "./navigation.ts";
 import { loadSettings, type UiSettings } from "./storage.ts";
+import {
+  loadMqttSettings,
+  saveMqttSettings,
+  generateCredentials,
+  type MqttSettings,
+} from "./views/mqtt-settings.ts";
 import type { ResolvedTheme, ThemeMode } from "./theme.ts";
 import type {
   AgentsListResult,
@@ -377,6 +384,11 @@ export class OpenClawApp extends LitElement {
   @state() logsAtBottom = true;
 
   client: GatewayBrowserClient | null = null;
+  mqttClient: MqttGatewayClient | null = null;
+  @state() mqttSettings: MqttSettings = loadMqttSettings();
+  @state() mqttConnecting = false;
+  @state() mqttConnected = false;
+  @state() mqttError: string | null = null;
   private chatScrollFrame: number | null = null;
   private chatScrollTimeout: number | null = null;
   private chatHasAutoScrolled = false;
@@ -549,13 +561,14 @@ export class OpenClawApp extends LitElement {
 
   async handleExecApprovalDecision(decision: "allow-once" | "allow-always" | "deny") {
     const active = this.execApprovalQueue[0];
-    if (!active || !this.client || this.execApprovalBusy) {
+    const requestClient = this.mqttClient ?? this.client;
+    if (!active || !requestClient || this.execApprovalBusy) {
       return;
     }
     this.execApprovalBusy = true;
     this.execApprovalError = null;
     try {
-      await this.client.request("exec.approval.resolve", {
+      await requestClient.request("exec.approval.resolve", {
         id: active.id,
         decision,
       });
