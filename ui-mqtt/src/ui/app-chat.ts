@@ -1,4 +1,5 @@
 import { parseAgentSessionKey } from "../../../src/sessions/session-key-utils.js";
+import { reconnectMqtt } from "./app-lifecycle.ts";
 import { scheduleChatScroll } from "./app-scroll.ts";
 import { setLastActiveSessionKey } from "./app-settings.ts";
 import { resetToolStream } from "./app-tool-stream.ts";
@@ -25,6 +26,9 @@ export type ChatHost = {
 };
 
 export const CHAT_SESSIONS_ACTIVE_MINUTES = 120;
+
+const QUEUE_STALE_TIMEOUT_MS = 30_000;
+let queueStaleTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function isChatBusy(host: ChatHost) {
   return host.chatSending || Boolean(host.chatRunId);
@@ -135,7 +139,9 @@ async function sendChatMessageNow(
 }
 
 async function flushChatQueue(host: ChatHost) {
+  clearQueueStaleTimer();
   if (!host.connected || isChatBusy(host)) {
+    startQueueStaleTimer(host);
     return;
   }
   const [next, ...rest] = host.chatQueue;
@@ -150,6 +156,33 @@ async function flushChatQueue(host: ChatHost) {
   if (!ok) {
     host.chatQueue = [next, ...host.chatQueue];
   }
+  if (host.chatQueue.length > 0) {
+    startQueueStaleTimer(host);
+  }
+}
+
+export function clearQueueStaleTimer() {
+  if (queueStaleTimer) {
+    clearTimeout(queueStaleTimer);
+    queueStaleTimer = null;
+  }
+}
+
+function startQueueStaleTimer(host: ChatHost) {
+  clearQueueStaleTimer();
+  if (host.chatQueue.length === 0) {
+    return;
+  }
+  queueStaleTimer = setTimeout(() => {
+    queueStaleTimer = null;
+    if (host.chatQueue.length === 0) {
+      return;
+    }
+    // Force clear busy state and reconnect — reconnect reloads history automatically
+    host.chatSending = false;
+    host.chatRunId = null;
+    reconnectMqtt(host as unknown as Parameters<typeof reconnectMqtt>[0]);
+  }, QUEUE_STALE_TIMEOUT_MS);
 }
 
 export function removeQueuedMessage(host: ChatHost, id: string) {
@@ -189,6 +222,7 @@ export async function handleSendChat(
 
   if (isChatBusy(host)) {
     enqueueChatMessage(host, message, attachmentsToSend, refreshSessions);
+    startQueueStaleTimer(host);
     return;
   }
 

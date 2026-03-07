@@ -1,7 +1,7 @@
 import { html, nothing } from "lit";
 import { parseAgentSessionKey } from "../../../src/routing/session-key.js";
 import { t } from "../i18n/index.ts";
-import { refreshChatAvatar } from "./app-chat.ts";
+import { clearQueueStaleTimer, refreshChatAvatar } from "./app-chat.ts";
 import { startMqttConnection, disconnectMqtt } from "./app-lifecycle.ts";
 import { renderUsageTab } from "./app-render-usage-tab.ts";
 import { renderChatControls, renderTab, renderThemeToggle } from "./app-render.helpers.ts";
@@ -1054,6 +1054,7 @@ export function renderApp(state: AppViewState) {
                   state.chatStreamStartedAt = null;
                   state.chatRunId = null;
                   state.chatQueue = [];
+                  clearQueueStaleTimer();
                   state.resetToolStream();
                   state.resetChatScroll();
                   state.applySettings({

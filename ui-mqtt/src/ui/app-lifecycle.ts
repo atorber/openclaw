@@ -122,6 +122,13 @@ export function disconnectMqtt(host: LifecycleHost) {
   stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
 }
 
+/** Disconnect then immediately reconnect using stored settings. */
+export function reconnectMqtt(host: LifecycleHost) {
+  const settings = host.mqttSettings;
+  disconnectMqtt(host);
+  startMqttConnection(host, settings);
+}
+
 export function handleFirstUpdated(host: LifecycleHost) {
   observeTopbar(host as unknown as Parameters<typeof observeTopbar>[0]);
 }
