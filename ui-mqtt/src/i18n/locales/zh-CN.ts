@@ -335,6 +335,8 @@ export const zh_CN: TranslationMap = {
     brokerUrl: "Broker URL",
     gatewayId: "网关 ID",
     secretKey: "密钥",
+    remark: "备注",
+    remarkPlaceholder: "例如：家里的服务器、办公室网关",
     copy: "复制",
     generate: "生成网关 ID",
     connect: "连接",

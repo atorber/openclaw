@@ -285,6 +285,11 @@ export function renderApp(state: AppViewState) {
               <div class="brand-sub">Gateway Dashboard</div>
             </div>
           </div>
+          <div class="pill mqtt-gateway-info" title="${state.mqttSettings.gatewayId}">
+            <span class="statusDot ok"></span>
+            <span>${state.mqttSettings.remark ? state.mqttSettings.remark : t("mqtt.gatewayId")}</span>
+            <span class="mono">${state.mqttSettings.gatewayId}</span>
+          </div>
         </div>
         <div class="topbar-status">
           <div class="pill">

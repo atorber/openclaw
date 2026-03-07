@@ -342,6 +342,8 @@ export const en: TranslationMap = {
     brokerUrl: "Broker URL",
     gatewayId: "Gateway ID",
     secretKey: "Secret Key",
+    remark: "Remark",
+    remarkPlaceholder: "e.g. Home server, Office gateway",
     copy: "Copy",
     generate: "Generate Gateway ID",
     connect: "Connect",

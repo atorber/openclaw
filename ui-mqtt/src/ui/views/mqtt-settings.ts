@@ -15,18 +15,19 @@ declare const __APP_VERSION__: string;
 
 const MQTT_SETTINGS_KEY = "openclaw.mqtt.settings.v1";
 const MQTT_HISTORY_KEY = "openclaw.mqtt.history.v1";
-const MAX_HISTORY = 10;
 
 export type MqttSettings = {
   brokerUrl: string;
   gatewayId: string;
   secretKey: string;
+  remark: string;
 };
 
 type GatewayProfile = {
   gatewayId: string;
   secretKey: string;
   brokerUrl: string;
+  remark: string;
   lastUsed: number;
 };
 
@@ -37,6 +38,7 @@ export function loadMqttSettings(): MqttSettings {
     brokerUrl: DEFAULT_BROKER_URL,
     gatewayId: "",
     secretKey: "",
+    remark: "",
   };
   try {
     const raw = localStorage.getItem(MQTT_SETTINGS_KEY);
@@ -52,6 +54,7 @@ export function loadMqttSettings(): MqttSettings {
       gatewayId:
         typeof parsed.gatewayId === "string" ? parsed.gatewayId.trim() : defaults.gatewayId,
       secretKey: typeof parsed.secretKey === "string" ? parsed.secretKey : defaults.secretKey,
+      remark: typeof parsed.remark === "string" ? parsed.remark : defaults.remark,
     };
   } catch {
     return defaults;
@@ -94,15 +97,13 @@ function saveToHistory(settings: MqttSettings): void {
     gatewayId: settings.gatewayId,
     secretKey: settings.secretKey,
     brokerUrl: settings.brokerUrl,
+    remark: settings.remark,
     lastUsed: Date.now(),
   };
   if (idx >= 0) {
     history.splice(idx, 1);
   }
   history.unshift(profile);
-  if (history.length > MAX_HISTORY) {
-    history.length = MAX_HISTORY;
-  }
   localStorage.setItem(MQTT_HISTORY_KEY, JSON.stringify(history));
 }
 
@@ -214,7 +215,9 @@ export function renderMqttSettings(
                   >
                     <span class="mqtt-dropdown-value">${
                       settings.gatewayId && history.some((h) => h.gatewayId === settings.gatewayId)
-                        ? settings.gatewayId
+                        ? history.find((h) => h.gatewayId === settings.gatewayId)?.remark
+                          ? `${history.find((h) => h.gatewayId === settings.gatewayId)!.remark} (${settings.gatewayId})`
+                          : settings.gatewayId
                         : t("mqtt.historyPlaceholder")
                     }</span>
                     <span class="mqtt-dropdown-arrow">▾</span>
@@ -232,11 +235,12 @@ export function renderMqttSettings(
                                 "brokerUrl",
                                 p.brokerUrl || DEFAULT_BROKER_URL,
                               );
+                              callbacks.onFieldChange("remark", p.remark || "");
                               (e.currentTarget as HTMLElement)
                                 .closest(".mqtt-dropdown")!
                                 .classList.remove("mqtt-dropdown--open");
                             }}
-                          >${p.gatewayId}</button>
+                          >${p.remark ? `${p.remark} (${p.gatewayId})` : p.gatewayId}</button>
                           <button
                             class="mqtt-dropdown-item-delete"
                             title="${t("mqtt.deleteHistory")}"
@@ -302,6 +306,17 @@ export function renderMqttSettings(
                 }}
               >👁</button>
             </div>
+          </div>
+
+          <div class="mqtt-settings-field">
+            <label>${t("mqtt.remark")}</label>
+              <input
+                type="text"
+                .value=${settings.remark}
+                placeholder="${t("mqtt.remarkPlaceholder")}"
+                @input=${(e: InputEvent) =>
+                  callbacks.onFieldChange("remark", (e.target as HTMLInputElement).value)}
+              />
           </div>
 
           <div class="mqtt-settings-actions">
