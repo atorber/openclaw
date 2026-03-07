@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+const pkg = JSON.parse(readFileSync(path.resolve(here, "package.json"), "utf-8")) as {
+  version: string;
+};
 
 function normalizeBase(input: string): string {
   const trimmed = input.trim();
@@ -30,6 +34,7 @@ export default defineConfig(() => {
     define: {
       // MQTT.js references process.env in browser builds; provide safe fallbacks.
       "process.env": "{}",
+      __APP_VERSION__: JSON.stringify(pkg.version),
     },
     build: {
       outDir: path.resolve(here, "dist/control-ui"),

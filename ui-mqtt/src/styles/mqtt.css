@@ -39,6 +39,13 @@
   margin: 0 0 0.5rem;
 }
 
+.mqtt-settings-version {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--fg-muted, #999);
+  vertical-align: middle;
+}
+
 .mqtt-settings-desc {
   font-size: 0.875rem;
   color: var(--fg-muted, #666);
@@ -204,7 +211,7 @@
   flex-shrink: 0;
   margin-left: 0.5rem;
   color: var(--fg-muted, #999);
-  font-size: 1.1rem;
+  font-size: 0.75rem;
 }
 
 .mqtt-dropdown-menu {

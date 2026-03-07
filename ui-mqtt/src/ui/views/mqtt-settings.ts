@@ -10,6 +10,8 @@ import { unsafeHTML } from "lit/directives/unsafe-html.js";
 import { i18n } from "../../i18n/index.ts";
 import { generateGatewayId, generateSecretKey } from "../mqtt-crypto.ts";
 
+declare const __APP_VERSION__: string;
+
 const MQTT_SETTINGS_KEY = "openclaw.mqtt.settings.v1";
 const MQTT_HISTORY_KEY = "openclaw.mqtt.history.v1";
 const MAX_HISTORY = 10;
@@ -184,7 +186,7 @@ export function renderMqttSettings(
     <div class="mqtt-settings">
       <div class="mqtt-settings-layout">
         <div class="mqtt-settings-card">
-          <h2 class="mqtt-settings-title">${t("mqtt.title")}</h2>
+          <h2 class="mqtt-settings-title">${t("mqtt.title")} <span class="mqtt-settings-version">v${__APP_VERSION__}</span></h2>
           <p class="mqtt-settings-desc">${t("mqtt.description")}</p>
 
           ${error ? html`<div class="mqtt-settings-error">${error}</div>` : ""}
