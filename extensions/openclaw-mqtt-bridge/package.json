@@ -1,0 +1,15 @@
+{
+  "name": "@openclaw/mqtt-bridge",
+  "version": "2026.3.7",
+  "description": "Bridge Gateway WS protocol to MQTT for remote UI access",
+  "type": "module",
+  "dependencies": {
+    "mqtt": "^5.12.2",
+    "ws": "^8.18.2"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}
