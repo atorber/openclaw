@@ -42,9 +42,10 @@ export function relaunchGatewayScheduledTask(env: NodeJS.ProcessEnv = process.en
     resolvePreferredOpenClawTmpDir(),
     `openclaw-schtasks-restart-${randomUUID()}.cmd`,
   );
+  const quotedScriptPath = quoteCmdScriptArg(scriptPath);
   try {
     fs.writeFileSync(scriptPath, `${buildScheduledTaskRestartScript(taskName)}\r\n`, "utf8");
-    const child = spawn("cmd.exe", ["/d", "/c", scriptPath], {
+    const child = spawn("cmd.exe", ["/d", "/s", "/c", quotedScriptPath], {
       detached: true,
       stdio: "ignore",
       windowsHide: true,
@@ -53,7 +54,7 @@ export function relaunchGatewayScheduledTask(env: NodeJS.ProcessEnv = process.en
     return {
       ok: true,
       method: "schtasks",
-      tried: [`schtasks /Run /TN "${taskName}"`, `cmd.exe /d /c "${scriptPath}"`],
+      tried: [`schtasks /Run /TN "${taskName}"`, `cmd.exe /d /s /c ${quotedScriptPath}`],
     };
   } catch (err) {
     try {

@@ -1,21 +1,37 @@
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { captureFullEnv } from "../test-utils/env.js";
 
 const spawnMock = vi.hoisted(() => vi.fn());
+const resolvePreferredOpenClawTmpDirMock = vi.hoisted(() => vi.fn(() => os.tmpdir()));
 
 vi.mock("node:child_process", () => ({
   spawn: (...args: unknown[]) => spawnMock(...args),
+}));
+vi.mock("./tmp-openclaw-dir.js", () => ({
+  resolvePreferredOpenClawTmpDir: () => resolvePreferredOpenClawTmpDirMock(),
 }));
 
 import { relaunchGatewayScheduledTask } from "./windows-task-restart.js";
 
 const envSnapshot = captureFullEnv();
 const createdScriptPaths = new Set<string>();
+const createdTmpDirs = new Set<string>();
+
+function decodeCmdPathArg(value: string): string {
+  const trimmed = value.trim();
+  const withoutQuotes =
+    trimmed.startsWith('"') && trimmed.endsWith('"') ? trimmed.slice(1, -1) : trimmed;
+  return withoutQuotes.replace(/\^!/g, "!").replace(/%%/g, "%");
+}
 
 afterEach(() => {
   envSnapshot.restore();
   spawnMock.mockReset();
+  resolvePreferredOpenClawTmpDirMock.mockReset();
+  resolvePreferredOpenClawTmpDirMock.mockReturnValue(os.tmpdir());
   for (const scriptPath of createdScriptPaths) {
     try {
       fs.unlinkSync(scriptPath);
@@ -24,15 +40,23 @@ afterEach(() => {
     }
   }
   createdScriptPaths.clear();
+  for (const tmpDir of createdTmpDirs) {
+    try {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    } catch {
+      // Best-effort cleanup for test temp roots.
+    }
+  }
+  createdTmpDirs.clear();
 });
 
 describe("relaunchGatewayScheduledTask", () => {
   it("writes a detached schtasks relaunch helper", () => {
     const unref = vi.fn();
-    let seenScriptPath = "";
+    let seenCommandArg = "";
     spawnMock.mockImplementation((_file: string, args: string[]) => {
-      createdScriptPaths.add(args[2]);
-      seenScriptPath = args[2];
+      seenCommandArg = args[3];
+      createdScriptPaths.add(decodeCmdPathArg(args[3]));
       return { unref };
     });
 
@@ -43,10 +67,10 @@ describe("relaunchGatewayScheduledTask", () => {
       method: "schtasks",
       tried: expect.arrayContaining(['schtasks /Run /TN "OpenClaw Gateway (work)"']),
     });
-    expect(result.tried).toContain(`cmd.exe /d /c "${seenScriptPath}"`);
+    expect(result.tried).toContain(`cmd.exe /d /s /c ${seenCommandArg}`);
     expect(spawnMock).toHaveBeenCalledWith(
       "cmd.exe",
-      ["/d", "/c", expect.any(String)],
+      ["/d", "/s", "/c", expect.any(String)],
       expect.objectContaining({
         detached: true,
         stdio: "ignore",
@@ -65,7 +89,7 @@ describe("relaunchGatewayScheduledTask", () => {
 
   it("prefers OPENCLAW_WINDOWS_TASK_NAME overrides", () => {
     spawnMock.mockImplementation((_file: string, args: string[]) => {
-      createdScriptPaths.add(args[2]);
+      createdScriptPaths.add(decodeCmdPathArg(args[3]));
       return { unref: vi.fn() };
     });
 
@@ -89,5 +113,21 @@ describe("relaunchGatewayScheduledTask", () => {
     expect(result.ok).toBe(false);
     expect(result.method).toBe("schtasks");
     expect(result.detail).toContain("spawn failed");
+  });
+
+  it("quotes the cmd /c script path when temp paths contain metacharacters", () => {
+    const unref = vi.fn();
+    const metacharTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "openclaw&(restart)-"));
+    createdTmpDirs.add(metacharTmpDir);
+    resolvePreferredOpenClawTmpDirMock.mockReturnValue(metacharTmpDir);
+    spawnMock.mockReturnValue({ unref });
+
+    relaunchGatewayScheduledTask({ OPENCLAW_PROFILE: "work" });
+
+    expect(spawnMock).toHaveBeenCalledWith(
+      "cmd.exe",
+      ["/d", "/s", "/c", expect.stringMatching(/^".*&.*"$/)],
+      expect.any(Object),
+    );
   });
 });
