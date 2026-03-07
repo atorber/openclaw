@@ -4,6 +4,7 @@ import {
 } from "../../../src/gateway/events.js";
 import { CHAT_SESSIONS_ACTIVE_MINUTES, flushChatQueueForEvent } from "./app-chat.ts";
 import type { EventLogEntry } from "./app-events.ts";
+import { clearConnectTimer } from "./app-lifecycle.ts";
 import {
   applySettings,
   loadCron,
@@ -452,6 +453,7 @@ export function connectMqttGateway(host: GatewayHost, mqttSettings: MqttSettings
       host.mqttError = null;
       host.lastError = null;
       host.lastErrorCode = null;
+      clearConnectTimer();
       host.hello = hello;
       applySnapshot(host, hello);
 

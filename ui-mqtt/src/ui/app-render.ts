@@ -2,6 +2,7 @@ import { html, nothing } from "lit";
 import { parseAgentSessionKey } from "../../../src/routing/session-key.js";
 import { t } from "../i18n/index.ts";
 import { refreshChatAvatar } from "./app-chat.ts";
+import { startMqttConnection, disconnectMqtt } from "./app-lifecycle.ts";
 import { renderUsageTab } from "./app-render-usage-tab.ts";
 import { renderChatControls, renderTab, renderThemeToggle } from "./app-render.helpers.ts";
 import type { AppViewState } from "./app-view-state.ts";
@@ -75,15 +76,14 @@ import { renderCron } from "./views/cron.ts";
 import { renderDebug } from "./views/debug.ts";
 import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
 import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
+import { renderInstances } from "./views/instances.ts";
+import { renderLogs } from "./views/logs.ts";
 import {
   renderMqttSettings,
   generateCredentials,
   saveMqttSettings,
   type MqttSettings,
 } from "./views/mqtt-settings.ts";
-import { startMqttConnection } from "./app-lifecycle.ts";
-import { renderInstances } from "./views/instances.ts";
-import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
@@ -158,6 +158,9 @@ export function renderApp(state: AppViewState) {
             state as unknown as Parameters<typeof startMqttConnection>[0],
             settings,
           );
+        },
+        onCancel: () => {
+          disconnectMqtt(state as unknown as Parameters<typeof disconnectMqtt>[0]);
         },
         onFieldChange: (field: keyof MqttSettings, value: string) => {
           state.mqttSettings = { ...state.mqttSettings, [field]: value };
@@ -295,6 +298,11 @@ export function renderApp(state: AppViewState) {
             <span class="mono">${state.connected ? t("common.ok") : t("common.offline")}</span>
           </div>
           ${renderThemeToggle(state)}
+          <button
+            class="mqtt-disconnect-btn"
+            title="${t("mqtt.disconnect")}"
+            @click=${() => disconnectMqtt(state as unknown as Parameters<typeof disconnectMqtt>[0])}
+          >${t("mqtt.disconnect")}</button>
         </div>
       </header>
       <aside class="nav ${state.settings.navCollapsed ? "nav--collapsed" : ""}">

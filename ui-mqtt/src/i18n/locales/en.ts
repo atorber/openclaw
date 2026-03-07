@@ -349,5 +349,13 @@ export const en: TranslationMap = {
     hint: "Copy the Gateway ID and Secret Key to your bridge plugin configuration.",
     bridgeConnected: "Bridge connected",
     bridgeDisconnected: "Bridge disconnected",
+    history: "Recent Gateways",
+    historyPlaceholder: "-- Select a gateway --",
+    clearHistory: "Clear history",
+    deleteHistory: "Remove from history",
+    disconnect: "Disconnect",
+    cancel: "Cancel",
+    configTitle: "Plugin Configuration",
+    configDesc: "Add to plugins.entries in ~/.openclaw/openclaw.json",
   },
 };

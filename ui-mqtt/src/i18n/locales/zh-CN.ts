@@ -330,7 +330,8 @@ export const zh_CN: TranslationMap = {
   },
   mqtt: {
     title: "MQTT 连接",
-    description: "通过 MQTT 连接到你的 OpenClaw 网关。输入 Broker URL 和凭据，或生成新的网关 ID 和密钥对。",
+    description:
+      "通过 MQTT 连接到你的 OpenClaw 网关。输入 Broker URL 和凭据，或生成新的网关 ID 和密钥对。",
     brokerUrl: "Broker URL",
     gatewayId: "网关 ID",
     secretKey: "密钥",
@@ -341,5 +342,13 @@ export const zh_CN: TranslationMap = {
     hint: "将网关 ID 和密钥复制到你的桥接插件配置中。",
     bridgeConnected: "桥接已连接",
     bridgeDisconnected: "桥接未连接",
+    history: "历史网关",
+    historyPlaceholder: "-- 选择网关 --",
+    clearHistory: "清除历史",
+    deleteHistory: "从历史中移除",
+    disconnect: "断开连接",
+    cancel: "取消",
+    configTitle: "插件配置",
+    configDesc: "添加到 ~/.openclaw/openclaw.json 的 plugins.entries 中",
   },
 };

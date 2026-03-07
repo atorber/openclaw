@@ -74,11 +74,52 @@ export function handleConnected(host: LifecycleHost) {
   }
 }
 
+const CONNECT_TIMEOUT_MS = 30_000;
+let connectTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function clearConnectTimer(): void {
+  if (connectTimer) {
+    clearTimeout(connectTimer);
+    connectTimer = null;
+  }
+}
+
 export function startMqttConnection(host: LifecycleHost, mqttSettings: MqttSettings) {
   host.mqttConnecting = true;
   host.mqttError = null;
+
+  // Clear any previous timeout
+  if (connectTimer) {
+    clearTimeout(connectTimer);
+    connectTimer = null;
+  }
+
   connectMqttGateway(host as unknown as Parameters<typeof connectMqttGateway>[0], mqttSettings);
-  // mqttConnecting/mqttConnected will be updated by onHello/onClose callbacks in connectMqttGateway
+
+  // Start 30s timeout
+  connectTimer = setTimeout(() => {
+    connectTimer = null;
+    if (host.mqttConnecting && !host.mqttConnected) {
+      disconnectMqtt(host);
+      host.mqttError = "Connection timeout (30s)";
+    }
+  }, CONNECT_TIMEOUT_MS);
+}
+
+export function disconnectMqtt(host: LifecycleHost) {
+  if (connectTimer) {
+    clearTimeout(connectTimer);
+    connectTimer = null;
+  }
+  host.mqttClient?.stop();
+  host.mqttClient = null;
+  host.mqttConnecting = false;
+  host.mqttConnected = false;
+  host.mqttError = null;
+  host.connected = false;
+  stopNodesPolling(host as unknown as Parameters<typeof stopNodesPolling>[0]);
+  stopLogsPolling(host as unknown as Parameters<typeof stopLogsPolling>[0]);
+  stopDebugPolling(host as unknown as Parameters<typeof stopDebugPolling>[0]);
 }
 
 export function handleFirstUpdated(host: LifecycleHost) {
