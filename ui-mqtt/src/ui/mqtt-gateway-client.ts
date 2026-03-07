@@ -99,6 +99,7 @@ export class MqttGatewayClient {
 
     // Connect to MQTT broker
     const clientId = `openclaw-ui-${randomSuffix()}`;
+    debugLog("connecting", { brokerUrl: this.opts.brokerUrl, clientId });
     this.client = mqtt.connect(this.opts.brokerUrl, {
       clientId,
       clean: true,
@@ -107,6 +108,7 @@ export class MqttGatewayClient {
     });
 
     this.client.on("connect", () => {
+      debugLog("connected");
       this._connected = true;
       this.opts.onConnectionChange?.(true);
       // Subscribe to all response/event/hello/status topics
@@ -119,6 +121,7 @@ export class MqttGatewayClient {
       for (const topic of topics) {
         this.client!.subscribe(topic, { qos: 1 });
       }
+      debugLog("subscribed", topics);
     });
 
     this.client.on("message", (topic: string, payload: Buffer) => {
@@ -126,22 +129,26 @@ export class MqttGatewayClient {
     });
 
     this.client.on("close", () => {
+      debugLog("close");
       this._connected = false;
       this.opts.onConnectionChange?.(false);
       this.opts.onClose?.({ reason: "mqtt connection closed" });
     });
 
     this.client.on("offline", () => {
+      debugLog("offline");
       this._connected = false;
       this.opts.onConnectionChange?.(false);
     });
 
     this.client.on("error", (err: Error) => {
+      debugLog("error", err.message);
       console.error("[mqtt-gateway] error:", err.message);
     });
   }
 
   stop(): void {
+    debugLog("stop");
     this.closed = true;
     this._connected = false;
     this.bridgeConnected = false;
@@ -177,12 +184,15 @@ export class MqttGatewayClient {
         timer,
       });
 
+      debugLog("send request", { method, id, topic: `${this.prefix}/req` });
       void this.publishEncrypted(`${this.prefix}/req`, payload);
     });
   }
 
   private async handleMessage(topic: string, rawPayload: Buffer): Promise<void> {
-    if (!this.cryptoKey) return;
+    if (!this.cryptoKey) {
+      return;
+    }
 
     // Decrypt the payload
     const plaintext = await decrypt(rawPayload.buffer, this.cryptoKey);
@@ -199,6 +209,7 @@ export class MqttGatewayClient {
     }
 
     if (topic === `${this.prefix}/hello`) {
+      debugLog("received hello", (parsed as MqttHelloPayload)?.serverVersion);
       this.helloReceived = true;
       this.opts.onHello?.(parsed as MqttHelloPayload);
       return;
@@ -206,6 +217,7 @@ export class MqttGatewayClient {
 
     if (topic === `${this.prefix}/status`) {
       const status = parsed as MqttStatusPayload;
+      debugLog("received status", status.status, status.reason ?? "");
       this.bridgeConnected = status.status === "connected";
       this.opts.onStatusChange?.(status);
       return;
@@ -213,8 +225,11 @@ export class MqttGatewayClient {
 
     if (topic === `${this.prefix}/res`) {
       const res = parsed as MqttGatewayResponseFrame;
+      debugLog("received res", { id: res.id, ok: res.ok });
       const pending = this.pending.get(res.id);
-      if (!pending) return; // Not our request
+      if (!pending) {
+        return;
+      } // Not our request
       clearTimeout(pending.timer);
       this.pending.delete(res.id);
       if (res.ok) {
@@ -236,9 +251,7 @@ export class MqttGatewayClient {
       // Sequence gap detection
       const seq = typeof evt.seq === "number" ? evt.seq : null;
       if (seq !== null && this.lastSeq !== null && seq > this.lastSeq + 1) {
-        console.warn(
-          `[mqtt-gateway] event gap: expected seq ${this.lastSeq + 1}, got ${seq}`,
-        );
+        console.warn(`[mqtt-gateway] event gap: expected seq ${this.lastSeq + 1}, got ${seq}`);
       }
       if (seq !== null) {
         this.lastSeq = seq;
@@ -252,8 +265,11 @@ export class MqttGatewayClient {
   }
 
   private async publishEncrypted(topic: string, plaintext: string): Promise<void> {
-    if (!this.client || !this.cryptoKey) return;
+    if (!this.client || !this.cryptoKey) {
+      return;
+    }
     const encrypted = await encrypt(plaintext, this.cryptoKey);
+    debugLog("publish", { topic, plainLen: plaintext.length, encryptedLen: encrypted.byteLength });
     this.client.publish(topic, Buffer.from(encrypted), { qos: 1 });
   }
 
@@ -268,4 +284,19 @@ export class MqttGatewayClient {
 
 function randomSuffix(): string {
   return Math.random().toString(36).slice(2, 10);
+}
+
+/** Enable in browser console: localStorage.setItem("openclaw_mqtt_debug", "1") */
+function mqttDebug(): boolean {
+  try {
+    return localStorage.getItem("openclaw_mqtt_debug") === "1";
+  } catch {
+    return false;
+  }
+}
+
+function debugLog(...args: unknown[]): void {
+  if (mqttDebug()) {
+    console.log("[mqtt-gateway]", ...args);
+  }
 }

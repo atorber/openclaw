@@ -6,9 +6,9 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
-    "test": "vitest run --config vitest.config.ts",
+    "tauri:build": "tauri build",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "test": "vitest run --config vitest.config.ts"
   },
   "dependencies": {
     "@lit-labs/signals": "^0.2.0",
@@ -23,6 +23,7 @@
     "vite": "7.3.1"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2",
     "@vitest/browser-playwright": "4.0.18",
     "playwright": "^1.58.2",
     "vitest": "4.0.18"
