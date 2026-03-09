@@ -1,0 +1,3 @@
+[submodule "openclaw-remote"]
+	path = openclaw-remote
+	url = https://github.com/atorber/openclaw-remote.git
